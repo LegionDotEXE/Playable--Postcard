@@ -35,18 +35,18 @@ class Preloader extends Phaser.Scene {
 
         // Image Assets
 
-        this.load.image('bg-table',   'images/bg-table.png')    // study table background
-        this.load.image('obj-mug',    'images/obj-mug.png')     // coffee mug
-        this.load.image('obj-laptop', 'images/obj-laptop.png')  // laptop
-        this.load.image('obj-books',  'images/obj-books.png')   // stack of books
-        this.load.image('obj-lamp',   'images/obj-lamp.png')    // desk lamp
-        this.load.image('obj-notes',  'images/obj-notes.png')   // crumpled notes
+        this.load.image('bg-table',   'images/bg-table.jpg')    // study table background
+        this.load.image('obj-mug',    'images/cup.png')     // coffee mug
+        this.load.image('obj-laptop', 'images/laptop.png')  // laptop
+        this.load.image('obj-books',  'images/books.png')   // stack of books
+        this.load.image('obj-lamp',   'images/lamp.png')    // desk lamp
+        this.load.image('obj-notes',  'images/notes.png')   // crumpled notes
 
         // Audio Assets
-        this.load.audio('ambient', 'audio/ambient.mp3')  
-        this.load.audio('click',   'audio/click.mp3')    
+        this.load.audio('ambient', 'audio/ambient.wav')  
+        this.load.audio('click',   'audio/click.ogg')    
         this.load.audio('chime',   'audio/chime.mp3')    
-        this.load.audio('flip',    'audio/flip.mp3')     
+        this.load.audio('flip',    'audio/flip.wav')     
 
         // Optional module to keep the game running even if assets fail to load - For Prototype
         this.load.on('loaderror', (file) => {
