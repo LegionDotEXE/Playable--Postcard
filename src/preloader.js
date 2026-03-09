@@ -36,7 +36,7 @@ class Preloader extends Phaser.Scene {
         // Image Assets
 
         this.load.image('bg-table',   'images/bg-table.jpg')    // study table background
-        this.load.image('obj-mug',    'images/cup.png')     // coffee mug
+        this.load.image('obj-mug',    'images/mug.png')     // coffee mug
         this.load.image('obj-laptop', 'images/laptop.png')  // laptop
         this.load.image('obj-books',  'images/books.png')   // stack of books
         this.load.image('obj-lamp',   'images/lamp.png')    // desk lamp

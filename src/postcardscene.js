@@ -1,9 +1,9 @@
 // PostcardScene.js
 // The main scene
+// PROTOTYPE
 
-// PROTOTYPE 
 
-class PostcardScene extends Phaser.Scene {   
+class PostcardScene extends Phaser.Scene {
     constructor() {
         super('PostcardScene')
     }
@@ -33,40 +33,40 @@ class PostcardScene extends Phaser.Scene {
         //  background
         this.drawBackground(W, H)
 
-        //  Interactive objects definition
+        //  Interactive objects definition - organized positions on table
         this.objectDefs = [
             {
                 key:    'mug',
-                x:      580,
-                y:      280,
+                x:      200,
+                y:      400,
                 label:  'Coffee Mug',
                 memory: '"Remember pulling that all-nighter\nbefore the physics final?\nYou drank three of these.\nI drank four. I win."'
             },
             {
                 key:    'laptop',
-                x:      370,
-                y:      260,
+                x:      400,
+                y:      300,
                 label:  'Laptop',
                 memory: '"You always had 47 tabs open.\n\'I need all of them\', you said.\nYou needed none of them.\nBut somehow the project shipped."'
             },
             {
                 key:    'books',
-                x:      180,
-                y:      310,
+                x:      600,
+                y:      380,
                 label:  'Stack of Books',
                 memory: '"You borrowed my Data Structures\nbook and highlighted everything.\nEVERYTHING.\nIt is basically a coloring book now."'
             },
             {
                 key:    'lamp',
                 x:      650,
-                y:      160,
+                y:      200,
                 label:  'Desk Lamp',
                 memory: '"The lamp was always on your side.\nMy side stayed dark.\nSomehow that felt like a metaphor\nfor our friendship."'
             },
             {
                 key:    'notes',
-                x:      290,
-                y:      370,
+                x:      150,
+                y:      220,
                 label:  'Crumpled Notes',
                 memory: '"You wrote \'TODO: understand this\'\non literally every page.\nSame, buddy. Same.\n(You still owe me $50, btw.)"'
             }
@@ -80,7 +80,6 @@ class PostcardScene extends Phaser.Scene {
         //  UI bar at bottom with counter and instructions
         this.drawUI(W, H)
         this.updateCounter()
-
     }
 
     //  Draw background
@@ -92,13 +91,13 @@ class PostcardScene extends Phaser.Scene {
     //  Draw each interactive object as a sprite with hover and click effects
     createInteractiveObject(def, alreadyFound) {
         let sprite = this.add.image(def.x, def.y, 'obj-' + def.key)
-        sprite.setScale(0.18)
+        sprite.setScale(0.10)
 
         if (alreadyFound) sprite.setAlpha(0.45)
 
         sprite.setInteractive({ useHandCursor: true })
 
-        let label = this.add.text(def.x, def.y - 50, def.label, {
+        let label = this.add.text(def.x, def.y - 40, def.label, {
             fontSize: '13px',
             fill: '#fffbe8',
             fontFamily: 'Courier New',
@@ -109,12 +108,12 @@ class PostcardScene extends Phaser.Scene {
         // hover effects: scale up + show label
         sprite.on('pointerover', () => {
             if (this.popupOpen) return
-            this.tweens.add({ targets: sprite, scaleX: 0.21, scaleY: 0.21, duration: 120, ease: 'Back.easeOut' })
+            this.tweens.add({ targets: sprite, scaleX: 0.12, scaleY: 0.12, duration: 120, ease: 'Back.easeOut' })
             label.setAlpha(1)
         })
 
         sprite.on('pointerout', () => {
-            this.tweens.add({ targets: sprite, scaleX: 0.18, scaleY: 0.18, duration: 120 })
+            this.tweens.add({ targets: sprite, scaleX: 0.10, scaleY: 0.10, duration: 120 })
             label.setAlpha(0)
         })
 
@@ -126,9 +125,9 @@ class PostcardScene extends Phaser.Scene {
 
         sprite.memoryKey    = def.key
         sprite.alreadyFound = alreadyFound
+
         return sprite
     }
-
 
     //  counter bar and instructions at bottom of screen
     drawUI(W, H) {
@@ -147,12 +146,6 @@ class PostcardScene extends Phaser.Scene {
         this.add.text(W - 16, H - 30, 'Click glowing objects to find memories', {
             fontSize: '13px', fill: '#888877', fontFamily: 'Courier New'
         }).setOrigin(1, 0)
-
-        this.add.text(W / 2, 8, '[Press M to jump to Message Scene]', {
-            fontSize: '11px', fill: '#555544', fontFamily: 'Courier New'
-        }).setOrigin(0.5, 0)
-
-        this.input.keyboard.once('keydown-M', () => { this.triggerPostcardFlip() })
     }
 
     //  refresh counter text with pulse tween
@@ -162,8 +155,9 @@ class PostcardScene extends Phaser.Scene {
     }
 
     //  overlay + memory card on click
-    showMemoryPopup(def, sprite, label) {   
+    showMemoryPopup(def, sprite, label) {
         this.popupOpen = true
+
         try { this.sound.play('click', { volume: 0.5 }) } catch(e) {}
 
         let W = this.scale.width
@@ -183,6 +177,7 @@ class PostcardScene extends Phaser.Scene {
         let badge = this.add.graphics().setDepth(12)
         badge.fillStyle(0xd4a853, 1)
         badge.fillCircle(W / 2 - 175, H / 2 - 100, 20)
+
         let badgeText = this.add.text(W / 2 - 175, H / 2 - 100, `${this.memoriesFound + 1}`, {
             fontSize: '16px', fill: '#1a0a00', fontStyle: 'bold', fontFamily: 'Courier New'
         }).setOrigin(0.5).setDepth(13)
@@ -220,10 +215,9 @@ class PostcardScene extends Phaser.Scene {
         if (!sprite.alreadyFound) {
             sprite.alreadyFound = true
             this.memoriesFound++
+            sprite.setAlpha(0.45)
 
-            sprite.setAlpha(0.45)    
-
-            this.add.text(sprite.x + 20, sprite.y - 30, '✓', {  
+            this.add.text(sprite.x + 20, sprite.y - 30, '✓', {
                 fontSize: '20px', fill: '#88ffaa', fontFamily: 'Arial'
             })
 
@@ -235,16 +229,16 @@ class PostcardScene extends Phaser.Scene {
         }
     }
 
-    // 
+    
     triggerPostcardFlip() {
         try { this.sound.play('chime', { volume: 0.6 }) } catch(e) {}
 
         let W = this.scale.width
         let H = this.scale.height
 
-        this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.7).setDepth(30)    
+        this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.7).setDepth(30)
 
-        this.add.text(W / 2, H / 2 - 60, 'All Memories Found!', {   
+        this.add.text(W / 2, H / 2 - 60, 'All Memories Found!', {
             fontSize: '26px', fill: '#ffd700', fontFamily: 'Georgia, serif',
             fontStyle: 'bold', stroke: '#3a2000', strokeThickness: 4
         }).setOrigin(0.5).setDepth(20)
@@ -261,6 +255,7 @@ class PostcardScene extends Phaser.Scene {
         // Play Again button
         let btn = this.add.rectangle(W / 2, H / 2 + 80, 180, 44, 0xd4a853)
             .setDepth(31).setInteractive({ useHandCursor: true })
+
         this.add.text(W / 2, H / 2 + 80, 'Play Again', {
             fontSize: '16px', fill: '#1a0a00', fontFamily: 'Courier New', fontStyle: 'bold'
         }).setOrigin(0.5).setDepth(32)
@@ -269,6 +264,9 @@ class PostcardScene extends Phaser.Scene {
         btn.on('pointerout',  () => btn.setFillStyle(0xd4a853))
         btn.on('pointerdown', () => { this.scene.restart() })
     }
+
+
+    // Final Build Modules
 
     // getSavedProgress() { ... }
     // saveProgress(key)  { ... }
