@@ -3,7 +3,7 @@
 // PROTOTYPE
 
 
-class postcardScene extends Phaser.Scene {
+class postcardscene extends Phaser.Scene {
     constructor() {
         super('PostcardScene')
     }
