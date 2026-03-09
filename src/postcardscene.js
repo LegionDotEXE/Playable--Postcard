@@ -1,58 +1,36 @@
 // PostcardScene.js
-// The main scene: top-down study table.
-// Players click on 5 objects to discover memories.
-// When all 5 are found, the postcard flips to MessageScene.
-//
-// PROTOTYPE — features stubbed for full build:
-//   TODO: localStorage progress persistence (getSavedProgress / saveProgress)
-//   TODO: Steam animation on coffee mug (createSteamEffect)
-//   TODO: Lamp glow radial effect on background
-//   TODO: City skyline in window (drawSkyline)
-//   TODO: Popup scale-in tween animation
-//   TODO: Camera flip tween on scene transition
-//   TODO: Camera fade-in on scene start
-//   TODO: "Already found" state restored across sessions
+// The main scene
 
-class PostcardScene extends Phaser.Scene {
+class postcardScene extends Phaser.Scene {
     constructor() {
         super('PostcardScene')
     }
 
-    // -------------------------------------------------------
-    // init() — resets state each time the scene starts
-    // -------------------------------------------------------
+    // Game state variables initialization
     init() {
         this.TOTAL_MEMORIES = 5       // how many clickable objects exist
-        this.memoriesFound   = 0      // counter — increments each click
+        this.memoriesFound   = 0      // counter for found memories
         this.popupOpen       = false  // blocks double-clicks while popup shows
     }
 
-    // -------------------------------------------------------
-    // create() — build all game objects
-    // -------------------------------------------------------
+    // Build the scene
     create() {
         let W = this.scale.width
         let H = this.scale.height
 
-        // TODO (full build): restore saved progress from localStorage here
-        // let savedData = this.getSavedProgress()
 
-        // ---- Ambient audio ----
+        // Audio setup - play ambient track
         try {
             this.ambientSound = this.sound.add('ambient', { loop: true, volume: 0.25 })
             this.ambientSound.play()
-        } catch (e) {
+        } catch (e) {                       // Just in case the audio files are missing or fail to load
             console.warn('Ambient audio not available')
         }
 
-        // ============================================================
-        //  BACKGROUND
-        // ============================================================
+        //  background 
         this.drawBackground(W, H)
 
-        // ============================================================
-        //  INTERACTIVE OBJECTS
-        // ============================================================
+        //  Interactive objects definition
         this.objectDefs = [
             {
                 key:    'mug',
@@ -91,32 +69,26 @@ class PostcardScene extends Phaser.Scene {
             }
         ]
 
-        // TODO (full build): pass savedData.found.includes(def.key) as second arg
         this.interactiveObjects = []
         this.objectDefs.forEach((def) => {
             this.interactiveObjects.push(this.createInteractiveObject(def, false))
         })
 
-        // ============================================================
-        //  UI
-        // ============================================================
+        //  UI bar at bottom with counter and instructions
         this.drawUI(W, H)
         this.updateCounter()
 
-        // TODO (full build): this.cameras.main.fadeIn(500, 0, 0, 0)
     }
 
-    // -------------------------------------------------------
-    //  drawBackground — study table, floor, window
-    // -------------------------------------------------------
+    // Study table, floor, window
     drawBackground(W, H) {
         let g = this.add.graphics()
 
-        // Room floor / carpet
+        // Room floor
         g.fillStyle(0x2b2030, 1)
         g.fillRect(0, 0, W, H)
 
-        // Table surface (warm wood)
+        // Table surface
         g.fillStyle(0x8b5e3c, 1)
         g.fillRect(80, 90, W - 160, H - 140)
 
@@ -133,8 +105,7 @@ class PostcardScene extends Phaser.Scene {
         g.fillStyle(0x5a3a20, 1)
         g.fillRect(80, H - 60, W - 160, 12)
 
-        // Window — plain dark fill for prototype
-        // TODO (full build): call this.drawSkyline(250, 0, 300, 85) here
+        // plain dark fill for prototype
         g.fillStyle(0x1a2a4a, 1)
         g.fillRect(250, 0, 300, 85)
         g.lineStyle(3, 0x8b7355, 1)
@@ -142,17 +113,10 @@ class PostcardScene extends Phaser.Scene {
         g.lineStyle(1, 0x5a6a8a, 0.5)
         g.lineBetween(400, 0, 400, 85)
         g.lineBetween(250, 42, 550, 42)
-
-        // TODO (full build): add radial lamp glow circles here
     }
 
-    // drawSkyline — city silhouette for the window
-    // TODO (full build): implement and call from drawBackground
-    // drawSkyline(wx, wy, ww, wh) { ... }
 
-    // -------------------------------------------------------
-    //  createInteractiveObject — draws + wires hover/click
-    // -------------------------------------------------------
+    //  Draw each 
     createInteractiveObject(def, alreadyFound) {
         let container = this.add.container(def.x, def.y)
 
@@ -176,9 +140,8 @@ class PostcardScene extends Phaser.Scene {
         }).setOrigin(0.5).setAlpha(0)
         container.add(label)
 
-        // TODO (full build): if alreadyFound, show checkmark + grey out graphic
 
-        // Hover: scale up + reveal label
+        // hover effects: scale up + show label
         hitZone.on('pointerover', () => {
             if (this.popupOpen) return
             this.tweens.add({ targets: container, scaleX: 1.12, scaleY: 1.12, duration: 120, ease: 'Back.easeOut' })
@@ -190,7 +153,7 @@ class PostcardScene extends Phaser.Scene {
             label.setAlpha(0)
         })
 
-        // Click: open memory popup
+        // Click: show memory popup
         hitZone.on('pointerdown', () => {
             if (this.popupOpen) return
             this.showMemoryPopup(def, container, graphic, label)
@@ -200,10 +163,6 @@ class PostcardScene extends Phaser.Scene {
         container.alreadyFound = alreadyFound
         return container
     }
-
-    // -------------------------------------------------------
-    //  Object drawing functions (primitive Phaser Graphics)
-    // -------------------------------------------------------
 
     // Coffee mug
     draw_mug(g, faded) {
@@ -220,10 +179,9 @@ class PostcardScene extends Phaser.Scene {
         g.strokePath()
         g.fillStyle(0x3d1c02, 1)
         g.fillRect(-15, -12, 30, 6)
-        // TODO (full build): call this.createSteamEffect(0, -28) when !faded
     }
 
-    // Laptop — top-down view
+    // top-down view
     draw_laptop(g, faded) {
         let body = faded ? 0x556677 : 0x778899
         g.fillStyle(body, 1)
@@ -275,7 +233,7 @@ class PostcardScene extends Phaser.Scene {
         }
     }
 
-    // Crumpled notes
+    // Notes with scribbles
     draw_notes(g, faded) {
         let c = faded ? 0xaaaaaa : 0xf5f0dc
         let sheets = [
@@ -306,13 +264,7 @@ class PostcardScene extends Phaser.Scene {
         }
     }
 
-    // createSteamEffect — animated rising steam above the mug
-    // TODO (full build): implement and call from draw_mug
-    // createSteamEffect(x, y) { ... }
-
-    // -------------------------------------------------------
-    //  drawUI — counter bar + instructions
-    // -------------------------------------------------------
+    //  counter bar and instructions at bottom of screen
     drawUI(W, H) {
         let uiBar = this.add.graphics()
         uiBar.fillStyle(0x0d0d1a, 0.85)
@@ -337,17 +289,13 @@ class PostcardScene extends Phaser.Scene {
         this.input.keyboard.once('keydown-M', () => { this.triggerPostcardFlip() })
     }
 
-    // -------------------------------------------------------
-    //  updateCounter — refresh counter text with pulse tween
-    // -------------------------------------------------------
+    //  refresh counter text with pulse tween
     updateCounter() {
         this.counterText.setText(`${this.memoriesFound} / ${this.TOTAL_MEMORIES}`)
         this.tweens.add({ targets: this.counterText, scaleX: 1.3, scaleY: 1.3, duration: 100, yoyo: true })
     }
 
-    // -------------------------------------------------------
-    //  showMemoryPopup — overlay + memory card on click
-    // -------------------------------------------------------
+    //  overlay + memory card on click
     showMemoryPopup(def, container, graphic, label) {
         this.popupOpen = true
         try { this.sound.play('click', { volume: 0.5 }) } catch(e) {}
@@ -373,7 +321,7 @@ class PostcardScene extends Phaser.Scene {
             fontSize: '16px', fill: '#1a0a00', fontStyle: 'bold', fontFamily: 'Courier New'
         }).setOrigin(0.5).setDepth(13)
 
-        // Memory title + body
+        // Memory title and body text
         let titleTxt = this.add.text(W / 2 - 140, H / 2 - 105, def.label, {
             fontSize: '15px', fill: '#7b4f2e', fontFamily: 'Georgia, serif', fontStyle: 'bold italic'
         }).setDepth(13)
@@ -387,8 +335,8 @@ class PostcardScene extends Phaser.Scene {
             fontSize: '12px', fill: '#a08060', fontFamily: 'Courier New'
         }).setOrigin(0.5).setDepth(13)
 
-        // TODO (full build): add scale-in tween on popup elements here
-
+        //  for the full build, might add a "Show me again later" button here 
+        // that doesn't mark the memory as found, just closes the popup?
         let popupElements = [overlay, popup, badge, badgeText, titleTxt, bodyTxt, closeTxt]
 
         // Dismiss on next click
@@ -397,9 +345,8 @@ class PostcardScene extends Phaser.Scene {
         })
     }
 
-    // -------------------------------------------------------
+
     //  closePopup — destroy popup and update game state
-    // -------------------------------------------------------
     closePopup(popupElements, def, container, graphic, label) {
         popupElements.forEach(el => el.destroy())
         this.popupOpen = false
@@ -414,8 +361,6 @@ class PostcardScene extends Phaser.Scene {
                 fontSize: '20px', fill: '#88ffaa', fontFamily: 'Arial'
             })
 
-            // TODO (full build): call this.saveProgress(def.key) here
-
             this.updateCounter()
 
             if (this.memoriesFound >= this.TOTAL_MEMORIES) {
@@ -424,9 +369,7 @@ class PostcardScene extends Phaser.Scene {
         }
     }
 
-    // -------------------------------------------------------
-    //  triggerPostcardFlip — win state + transition
-    // -------------------------------------------------------
+    // 
     triggerPostcardFlip() {
         try { this.sound.play('chime', { volume: 0.6 }) } catch(e) {}
 
@@ -440,19 +383,12 @@ class PostcardScene extends Phaser.Scene {
 
         if (this.ambientSound) this.ambientSound.stop()
 
-        // TODO (full build): replace with camera squish/flip tween
+        // Full build still pending
+        // For now, just a delayed fade-out to the next scene
         this.time.delayedCall(1200, () => {
             try { this.sound.play('flip', { volume: 0.5 }) } catch(e) {}
             this.cameras.main.fadeOut(400, 0, 0, 0)
             this.time.delayedCall(400, () => { this.scene.start('MessageScene') })
         })
     }
-
-    // -------------------------------------------------------
-    //  localStorage helpers — stubbed for prototype
-    //  TODO (full build): implement all three methods
-    // -------------------------------------------------------
-    // getSavedProgress() { ... }
-    // saveProgress(key)  { ... }
-    // clearProgress()    { ... }
 }
