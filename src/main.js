@@ -1,5 +1,5 @@
 // Playable Postcard
-// Author: Saurav Shah
+// Saurav Shah
 // Prototype For PLayable Postcard 
 //                      -----------------Final Verfication Pending
 
