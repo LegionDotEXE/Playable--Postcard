@@ -23,9 +23,9 @@ let config = {
     
     scene: [ 
         boot, 
-        preloader,
+        Preloader,
         menuScene, 
-        postcardScene, 
+        PostcardScene, 
         //messageScene 
     ]
 }

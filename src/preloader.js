@@ -1,7 +1,7 @@
 // Preloader.js
 
 
-class preloader extends Phaser.Scene {
+class Preloader extends Phaser.Scene {   
     constructor() {
         super('Preloader')
     }
@@ -15,10 +15,12 @@ class preloader extends Phaser.Scene {
 
         // Track background
         this.add.rectangle(width / 2, height / 2, 400, 24, 0x333355)
-        
+
         // Progress Bar starting with 0 width
         let bar = this.add.rectangle(width / 2 - 198, height / 2, 4, 20, 0xffd700)
         bar.setOrigin(0, 0.5)
+
+        // Primary Text: Courier New
 
         this.add.text(width / 2, height / 2 - 30, 'Loading...', {
             fontSize: '18px',
@@ -31,21 +33,29 @@ class preloader extends Phaser.Scene {
             bar.width = 396 * value
         })
 
-        // ---- Audio assets ----
+        // Image Assets
 
-        this.load.audio('ambient', 'audio/ambient.mp3')
-        this.load.audio('click',   'audio/click.mp3')
-        this.load.audio('chime',   'audio/chime.mp3')
-        this.load.audio('flip',    'audio/flip.mp3')
-        
-        // Optional module to keep the play running even if assets fail to load - For Prototype
+        this.load.image('bg-table',   'images/bg-table.png')    // study table background
+        this.load.image('obj-mug',    'images/obj-mug.png')     // coffee mug
+        this.load.image('obj-laptop', 'images/obj-laptop.png')  // laptop
+        this.load.image('obj-books',  'images/obj-books.png')   // stack of books
+        this.load.image('obj-lamp',   'images/obj-lamp.png')    // desk lamp
+        this.load.image('obj-notes',  'images/obj-notes.png')   // crumpled notes
+
+        // Audio Assets
+        this.load.audio('ambient', 'audio/ambient.mp3')  
+        this.load.audio('click',   'audio/click.mp3')    
+        this.load.audio('chime',   'audio/chime.mp3')    
+        this.load.audio('flip',    'audio/flip.mp3')     
+
+        // Optional module to keep the game running even if assets fail to load - For Prototype
         this.load.on('loaderror', (file) => {
-            console.warn('Optional asset not found:', file.key)
+            console.warn('Optional asset not found:', file.key, file.url)
         })
     }
 
     create() {
-        // All assets loaded — hand off to the title screen
+        // Start the Menu Scene after loading is complete
         this.scene.start('MenuScene')
     }
 }
