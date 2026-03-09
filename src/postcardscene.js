@@ -1,6 +1,6 @@
 // PostcardScene.js
 // The main scene
-//
+
 // PROTOTYPE 
 
 class PostcardScene extends Phaser.Scene {   
@@ -204,8 +204,6 @@ class PostcardScene extends Phaser.Scene {
         //  for the full build, might add a "Show me again later" button here
         // that doesn't mark the memory as found, just closes the popup?
 
-        // TODO (full build): add scale-in tween on popup elements here
-
         let popupElements = [overlay, popup, badge, badgeText, titleTxt, bodyTxt, closeTxt]
 
         // Dismiss on next click
@@ -223,13 +221,11 @@ class PostcardScene extends Phaser.Scene {
             sprite.alreadyFound = true
             this.memoriesFound++
 
-            sprite.setAlpha(0.45)    // FIX: was graphic.setAlpha(0.5) — now fades the sprite directly
+            sprite.setAlpha(0.45)    
 
-            this.add.text(sprite.x + 20, sprite.y - 30, '✓', {    // FIX: uses sprite.x/y instead of container.x/y
+            this.add.text(sprite.x + 20, sprite.y - 30, '✓', {  
                 fontSize: '20px', fill: '#88ffaa', fontFamily: 'Arial'
             })
-
-            // TODO (full build): call this.saveProgress(def.key) here
 
             this.updateCounter()
 
@@ -248,7 +244,7 @@ class PostcardScene extends Phaser.Scene {
 
         this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.7).setDepth(30)    
 
-        this.add.text(W / 2, H / 2 - 60, '✨ All Memories Found! ✨', {   
+        this.add.text(W / 2, H / 2 - 60, 'All Memories Found!', {   
             fontSize: '26px', fill: '#ffd700', fontFamily: 'Georgia, serif',
             fontStyle: 'bold', stroke: '#3a2000', strokeThickness: 4
         }).setOrigin(0.5).setDepth(20)
