@@ -1,5 +1,5 @@
 // Menuscene.js
-class menuScene extends Phaser.Scene {
+class menuscene extends Phaser.Scene {
     constructor() {
         super('MenuScene')
     }

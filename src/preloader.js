@@ -1,7 +1,7 @@
 // Preloader.js
 
 
-class Preloader extends Phaser.Scene {   
+class preloader extends Phaser.Scene {   
     constructor() {
         super('Preloader')
     }
