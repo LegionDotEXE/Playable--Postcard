@@ -31,12 +31,12 @@ class menuScene extends Phaser.Scene {
             })
         }
 
-        // Postcard frame
-        let card = this.add.graphics()
-        card.lineStyle(3, 0xd4a853, 1)
-        card.strokeRect(W / 2 - 260, H / 2 - 160, 520, 320)
-        card.fillStyle(0xfdf6e3, 1)
-        card.fillRect(W / 2 - 260, H / 2 - 160, 520, 320)
+        // // Postcard frame
+        // let card = this.add.graphics()
+        // card.lineStyle(3, 0xd4a853, 1)
+        // card.strokeRect(W / 2 - 260, H / 2 - 160, 520, 320)
+        // card.fillStyle(0xfdf6e3, 1)
+        // card.fillRect(W / 2 - 260, H / 2 - 160, 520, 320)
 
         // Title and instructions text
         this.add.text(W / 2, H / 2 - 80, 'A Late-Night Postcard', {
