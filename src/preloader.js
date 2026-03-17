@@ -1,7 +1,5 @@
 // Preloader.js
-
-
-class preloader extends Phaser.Scene {   
+class preloader extends Phaser.Scene {
     constructor() {
         super('Preloader')
     }
@@ -21,7 +19,6 @@ class preloader extends Phaser.Scene {
         bar.setOrigin(0, 0.5)
 
         // Primary Text: Courier New
-
         this.add.text(width / 2, height / 2 - 30, 'Loading...', {
             fontSize: '18px',
             fill: '#ffffff',
@@ -33,22 +30,29 @@ class preloader extends Phaser.Scene {
             bar.width = 396 * value
         })
 
-        // Image Assets
+        // Image Assets - Interactive Objects
+        this.load.image('bg-table',   'images/bg-table.jpg')
+        this.load.image('obj-mug',    'images/mug.png')
+        this.load.image('obj-laptop', 'images/laptop.png')
+        this.load.image('obj-books',  'images/books.png')
+        this.load.image('obj-lamp',   'images/lamp.png')
+        this.load.image('obj-notes',  'images/notes.png')
 
-        this.load.image('bg-table',   'images/bg-table.jpg')    // study table background
-        this.load.image('obj-mug',    'images/mug.png')     // coffee mug
-        this.load.image('obj-laptop', 'images/laptop.png')  // laptop
-        this.load.image('obj-books',  'images/books.png')   // stack of books
-        this.load.image('obj-lamp',   'images/lamp.png')    // desk lamp
-        this.load.image('obj-notes',  'images/notes.png')   // crumpled notes
+        // Decorative Clutter Assets (optional - game works without them)
+        this.load.image('decor-headphones', 'images/decor-headphones.png')
+        this.load.image('decor-sticky',     'images/decor-sticky.png')
+        this.load.image('decor-pen',        'images/decor-pen.png')
+        this.load.image('decor-coaster',    'images/decor-coaster.png')
+        this.load.image('decor-phone',      'images/decor-phone.png')
+        this.load.image('decor-wrapper',    'images/decor-wrapper.png')
 
         // Audio Assets
-        this.load.audio('ambient', 'audio/ambient.wav')  
-        this.load.audio('click',   'audio/click.ogg')    
-        this.load.audio('chime',   'audio/chime.mp3')    
-        this.load.audio('flip',    'audio/flip.wav')     
+        this.load.audio('ambient', 'audio/ambient.wav')
+        this.load.audio('click',   'audio/click.ogg')
+        this.load.audio('chime',   'audio/chime.mp3')
+        this.load.audio('flip',    'audio/flip.wav')
 
-        // Optional module to keep the game running even if assets fail to load - For Prototype
+        // Optional module to keep the game running even if assets fail to load
         this.load.on('loaderror', (file) => {
             console.warn('Optional asset not found:', file.key, file.url)
         })
