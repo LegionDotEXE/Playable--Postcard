@@ -1,7 +1,7 @@
 // Playable Postcard
 // Saurav Shah
-// Prototype For PLayable Postcard 
-//                      -----------------Final Verfication Pending
+
+
 
 
 // Main.js Prefab
