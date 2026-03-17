@@ -26,7 +26,7 @@ let config = {
         preloader,
         menuscene, 
         postcardscene, 
-        //messageScene 
+        messagescene 
     ]
 }
 
