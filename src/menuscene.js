@@ -19,6 +19,7 @@ class menuscene extends Phaser.Scene {
             let y = Phaser.Math.Between(0, H)
             let r = Math.random() < 0.3 ? 3 : (Math.random() < 0.6 ? 2 : 1.5)
             let star = this.add.circle(x, y, r, 0xffffff, Phaser.Math.FloatBetween(0.4, 1))
+            
 
             // Twinkle effect
             this.tweens.add({

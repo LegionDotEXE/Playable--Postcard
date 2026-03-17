@@ -8,7 +8,7 @@
 
 'use strict'
 
-// Game configuration object
+// Game configurations
 let config = {
     type: Phaser.AUTO,           
     width: 800,                  
