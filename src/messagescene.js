@@ -5,35 +5,41 @@ class messagescene extends Phaser.Scene {
         super('MessageScene')
     }
 
+    // thinking of actually making a postcard design here instead of just a simple text
+    // Adds more personality and charm, and fits the theme better
+
+    // TEST 8
+
     create() {
         let W = this.scale.width
         let H = this.scale.height
 
-        // ----- Background -----
+        // Background
         let bg = this.add.graphics()
         bg.fillStyle(0xfdf6e3, 1)
         bg.fillRect(0, 0, W, H)
 
-        // ----- Postcard outer border -----
+        // outer border
         let border = this.add.graphics()
         border.lineStyle(5, 0xb8864e, 1)
         border.strokeRect(30, 30, W - 60, H - 60)
         border.lineStyle(2, 0xd4a853, 1)
         border.strokeRect(38, 38, W - 76, H - 76)
 
-        // ----- Vertical divider (left = message, right = address) -----
+        // Divider line
         let divider = this.add.graphics()
         divider.lineStyle(2, 0xc8a87a, 0.8)
         divider.lineBetween(W / 2, 50, W / 2, H - 50)
 
-        // ----- Address lines on right side -----
+        // Address block
         let lines = this.add.graphics()
         lines.lineStyle(1, 0xd4b896, 0.7)
         for (let ly = 120; ly <= H - 80; ly += 28) {
             lines.lineBetween(W / 2 + 20, ly, W - 50, ly)
         }
 
-        // ----- Postage stamp (top right) -----
+        // Postage Stamp
+        // Test to see if it breaks the other interactions
         let stamp = this.add.graphics()
         stamp.fillStyle(0xc0392b, 1)
         stamp.fillRect(W - 130, 50, 90, 115)
@@ -62,7 +68,7 @@ class messagescene extends Phaser.Scene {
             fontSize: '9px', fill: '#886644', fontFamily: 'Courier New', align: 'center'
         }).setOrigin(0.5)
 
-        // ----- TO / FROM block (right side) -----
+        // Recipient and sender info
         this.add.text(W / 2 + 30, 85, 'TO:', {
             fontSize: '13px', fill: '#5a3a20', fontFamily: 'Courier New', fontStyle: 'bold'
         })
@@ -81,7 +87,6 @@ class messagescene extends Phaser.Scene {
             fontSize: '14px', fill: '#2c1810', fontFamily: 'Georgia, serif', fontStyle: 'italic'
         })
 
-        // ----- Personal message (left side) -----
         this.add.text(50, 60, 'Dear Samir,', {
             fontSize: '22px', fill: '#2c1810', fontFamily: 'Georgia, serif', fontStyle: 'italic bold'
         })
@@ -98,7 +103,7 @@ class messagescene extends Phaser.Scene {
             "You're stuck with me until graduation.",
             'Might as well enjoy it.',
             '',
-            'Now please — pay me back. 🙏',
+            'Now please... PAY ME BACK. 🙏',
         ]
 
         message.forEach((line, i) => {
@@ -115,7 +120,7 @@ class messagescene extends Phaser.Scene {
             fontSize: '22px', fill: '#2c1810', fontFamily: 'Georgia, serif', fontStyle: 'bold italic'
         })
 
-        // ----- Play Again button -----
+        // Replay button
         let btn = this.add.rectangle(W / 2, H - 22, 160, 28, 0xd4a853)
             .setInteractive({ useHandCursor: true })
 
@@ -130,7 +135,7 @@ class messagescene extends Phaser.Scene {
             this.time.delayedCall(300, () => { this.scene.start('MenuScene') })
         })
 
-        // ----- Fade in -----
+        // Fade in animaiton for postcard reveal
         this.cameras.main.fadeIn(600, 255, 240, 210)
     }
 }

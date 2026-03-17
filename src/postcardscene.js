@@ -1,7 +1,6 @@
 // PostcardScene.js
 // The main scene
-// PROTOTYPE
-
+// FINAL BUILD 
 
 class postcardscene extends Phaser.Scene {
     constructor() {
@@ -13,6 +12,7 @@ class postcardscene extends Phaser.Scene {
         this.TOTAL_MEMORIES = 5       // how many clickable objects exist
         this.memoriesFound   = 0      // counter for found memories
         this.popupOpen       = false  // blocks double-clicks while popup shows
+        this.lampClicked     = false  // tracks lamp click state
     }
 
     // Build the scene
@@ -33,12 +33,16 @@ class postcardscene extends Phaser.Scene {
         //  background
         this.drawBackground(W, H)
 
+        //  Lamp glow effect 
+        this.createLampGlow(W, H)
+
         //  Interactive objects definition - organized positions on table
         this.objectDefs = [
             {
                 key:    'mug',
                 x:      200,
                 y:      400,
+                scale:  0.14,  // Larger - mugs feel substantial
                 label:  'Coffee Mug',
                 memory: '"Remember pulling that all-nighter\nbefore the physics final?\nYou drank three of these.\nI drank four. I win."'
             },
@@ -46,6 +50,7 @@ class postcardscene extends Phaser.Scene {
                 key:    'laptop',
                 x:      400,
                 y:      300,
+                scale:  0.18,  
                 label:  'Laptop',
                 memory: '"You always had 47 tabs open.\n\'I need all of them\', you said.\nYou needed none of them.\nBut somehow the project shipped."'
             },
@@ -53,6 +58,7 @@ class postcardscene extends Phaser.Scene {
                 key:    'books',
                 x:      600,
                 y:      380,
+                scale:  0.13, 
                 label:  'Stack of Books',
                 memory: '"You borrowed my Data Structures\nbook and highlighted everything.\nEVERYTHING.\nIt is basically a coloring book now."'
             },
@@ -60,6 +66,7 @@ class postcardscene extends Phaser.Scene {
                 key:    'lamp',
                 x:      650,
                 y:      200,
+                scale:  0.10,  
                 label:  'Desk Lamp',
                 memory: '"The lamp was always on your side.\nMy side stayed dark.\nSomehow that felt like a metaphor\nfor our friendship."'
             },
@@ -67,6 +74,7 @@ class postcardscene extends Phaser.Scene {
                 key:    'notes',
                 x:      150,
                 y:      220,
+                scale:  0.09,  
                 label:  'Crumpled Notes',
                 memory: '"You wrote \'TODO: understand this\'\non literally every page.\nSame, buddy. Same.\n(You still owe me $50, btw.)"'
             }
@@ -77,54 +85,162 @@ class postcardscene extends Phaser.Scene {
             this.interactiveObjects.push(this.createInteractiveObject(def, false))
         })
 
+        //  Decorative desk clutter 
+        this.addDeskClutter(W, H)
+
         //  UI bar at bottom with counter and instructions
         this.drawUI(W, H)
         this.updateCounter()
+    }
+
+    //  Create atmospheric lamp glow with flicker animation
+    createLampGlow(W, H) {
+        // Radial gradient glow around lamp position
+        this.lampGlow = this.add.circle(650, 200, 200, 0xffd700, 0.10).setDepth(0)
+        
+        // Subtle flicker effect (realistic bulb behavior)
+        this.tweens.add({
+            targets: this.lampGlow,
+            alpha: 0.05,
+            duration: 2500,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: -1
+        })
+    }
+
+    //  Add decorative clutter for lived-in desk atmosphere
+    addDeskClutter(W, H) {
+        // Headphones near laptop 
+        let headphones = this.add.image(420, 320, 'decor-headphones')
+            .setScale(0.10)
+            .setDepth(1)
+            .setAlpha(0.85)
+
+        // Sticky notes scattered
+        let sticky1 = this.add.image(180, 250, 'decor-sticky')
+            .setScale(0.08)
+            .setDepth(1)
+            .setRotation(-0.15)
+            .setAlpha(0.8)
+
+        let sticky2 = this.add.image(550, 240, 'decor-sticky')
+            .setScale(0.07)
+            .setDepth(1)
+            .setRotation(0.1)
+            .setAlpha(0.75)
+
+        // Pen/pencil near notes
+        let pen = this.add.image(170, 240, 'decor-pen')
+            .setScale(0.09)
+            .setDepth(1)
+            .setRotation(-0.3)
+
+        // Coaster under mug
+        let coaster = this.add.image(200, 415, 'decor-coaster')
+            .setScale(0.11)
+            .setDepth(0)
+            .setAlpha(0.7)
+
+        // Phone with faint screen glow
+        let phone = this.add.image(580, 350, 'decor-phone')
+            .setScale(0.08)
+            .setDepth(1)
+            .setRotation(0.2)
+
+        // Empty snack wrapper 
+        let wrapper = this.add.image(320, 420, 'decor-wrapper')
+            .setScale(0.07)
+            .setDepth(1)
+            .setRotation(0.25)
+            .setAlpha(0.75)
+
+        // Store clutter for potential future interactions
+        this.clutter = [headphones, sticky1, sticky2, pen, coaster, phone, wrapper]
     }
 
     //  Draw background
     drawBackground(W, H) {
         let bg = this.add.image(W / 2, H / 2, 'bg-table')
         bg.setDisplaySize(W, H)
+        bg.setDepth(0)
     }
 
     //  Draw each interactive object as a sprite with hover and click effects
     createInteractiveObject(def, alreadyFound) {
         let sprite = this.add.image(def.x, def.y, 'obj-' + def.key)
-        sprite.setScale(0.10)
-
+        
+        sprite.setScale(def.scale || 0.10)
+        
         if (alreadyFound) sprite.setAlpha(0.45)
 
         sprite.setInteractive({ useHandCursor: true })
+        sprite.setDepth(2) 
 
-        let label = this.add.text(def.x, def.y - 40, def.label, {
+        let label = this.add.text(def.x, def.y - 50, def.label, {
             fontSize: '13px',
             fill: '#fffbe8',
             fontFamily: 'Courier New',
             backgroundColor: '#33220088',
             padding: { x: 6, y: 3 }
-        }).setOrigin(0.5).setAlpha(0)
+        }).setOrigin(0.5).setAlpha(0).setDepth(3)
 
-        // hover effects: scale up + show label
+        // hover effects
         sprite.on('pointerover', () => {
             if (this.popupOpen) return
-            this.tweens.add({ targets: sprite, scaleX: 0.12, scaleY: 0.12, duration: 120, ease: 'Back.easeOut' })
+            this.tweens.add({ 
+                targets: sprite, 
+                scaleX: def.scale * 1.2, 
+                scaleY: def.scale * 1.2, 
+                duration: 120, 
+                ease: 'Back.easeOut' 
+            })
             label.setAlpha(1)
         })
 
         sprite.on('pointerout', () => {
-            this.tweens.add({ targets: sprite, scaleX: 0.10, scaleY: 0.10, duration: 120 })
+            this.tweens.add({ 
+                targets: sprite, 
+                scaleX: def.scale, 
+                scaleY: def.scale, 
+                duration: 120 
+            })
             label.setAlpha(0)
         })
 
-        // Click: show memory popup
+        // show memory popup
         sprite.on('pointerdown', () => {
             if (this.popupOpen) return
+            
+            if (def.key === 'lamp') {
+                this.lampClicked = true
+                // Intensify glow 
+                this.tweens.add({
+                    targets: this.lampGlow,
+                    alpha: 0.25,
+                    duration: 300,
+                    yoyo: true,
+                    repeat: 1,
+                    onComplete: () => {
+                                            // It is to test if the lamp glow responds to clicks w/o breaking
+                        this.tweens.add({
+                            targets: this.lampGlow,
+                            alpha: 0.05,
+                            duration: 2500,
+                            ease: 'Sine.easeInOut',
+                            yoyo: true,
+                            repeat: -1
+                        })
+                    }
+                })
+            }
+            
             this.showMemoryPopup(def, sprite, label)
         })
 
         sprite.memoryKey    = def.key
         sprite.alreadyFound = alreadyFound
+        sprite.defScale     = def.scale             // For reference only! 
 
         return sprite
     }
@@ -151,14 +267,28 @@ class postcardscene extends Phaser.Scene {
     //  refresh counter text with pulse tween
     updateCounter() {
         this.counterText.setText(`${this.memoriesFound} / ${this.TOTAL_MEMORIES}`)
-        this.tweens.add({ targets: this.counterText, scaleX: 1.3, scaleY: 1.3, duration: 100, yoyo: true })
+        this.tweens.add({ 
+            targets: this.counterText, 
+            scaleX: 1.3, 
+            scaleY: 1.3, 
+            duration: 100, 
+            yoyo: true 
+        })
     }
 
     //  overlay + memory card on click
     showMemoryPopup(def, sprite, label) {
         this.popupOpen = true
 
-        try { this.sound.play('click', { volume: 0.5 }) } catch(e) {}
+        try { 
+            if (this.sound.get('click')) {
+                this.sound.play('click', { volume: 0.5 })
+            } else {
+                console.warn('Click sound not loaded')
+            }
+        } catch(e) { 
+            console.warn('Click sound playback failed:', e.message)
+        }
 
         let W = this.scale.width
         let H = this.scale.height
@@ -196,9 +326,6 @@ class postcardscene extends Phaser.Scene {
             fontSize: '12px', fill: '#a08060', fontFamily: 'Courier New'
         }).setOrigin(0.5).setDepth(13)
 
-        //  for the full build, might add a "Show me again later" button here
-        // that doesn't mark the memory as found, just closes the popup?
-
         let popupElements = [overlay, popup, badge, badgeText, titleTxt, bodyTxt, closeTxt]
 
         // Dismiss on next click
@@ -229,46 +356,61 @@ class postcardscene extends Phaser.Scene {
         }
     }
 
-    
     triggerPostcardFlip() {
         try { this.sound.play('chime', { volume: 0.6 }) } catch(e) {}
 
         let W = this.scale.width
         let H = this.scale.height
 
-        this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.7).setDepth(30)
+        // Fade to black overlay
+        let fadeOverlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0).setDepth(30)
+        this.tweens.add({
+            targets: fadeOverlay,
+            alpha: 0.7,
+            duration: 600
+        })
 
+        // Celebration text with scale-in
         this.add.text(W / 2, H / 2 - 60, 'All Memories Found!', {
-            fontSize: '26px', fill: '#ffd700', fontFamily: 'Georgia, serif',
+            fontSize: '28px', fill: '#ffd700', fontFamily: 'Georgia, serif',
             fontStyle: 'bold', stroke: '#3a2000', strokeThickness: 4
-        }).setOrigin(0.5).setDepth(20)
+        }).setOrigin(0.5).setDepth(20).setScale(0.8)
+
+        // Animate celebration text
+        let celebrateText = this.add.text(W / 2, H / 2 - 60, 'All Memories Found!', {
+            fontSize: '28px', fill: '#ffd700', fontFamily: 'Georgia, serif',
+            fontStyle: 'bold', stroke: '#3a2000', strokeThickness: 4
+        }).setOrigin(0.5).setDepth(31).setAlpha(0)
+
+        this.tweens.add({
+            targets: celebrateText,
+            alpha: 1,
+            scaleX: 1.1,
+            scaleY: 1.1,
+            duration: 400,
+            ease: 'Back.easeOut',
+            yoyo: true,
+            repeat: 2
+        })
 
         if (this.ambientSound) this.ambientSound.stop()
 
-        // Full build still pending
-        // For now, just a delayed fade-out to the next scene
-        this.add.text(W / 2, H / 2, '[ PROTOTYPE END ]\nMessageScene coming in full build.', {    // FIX: replaces MessageScene transition
-            fontSize: '15px', fill: '#ccccaa', fontFamily: 'Courier New',
-            align: 'center', lineSpacing: 6
-        }).setOrigin(0.5).setDepth(31)
+        // Final message with progressive reveal
+        let finalMessage = this.add.text(W / 2, H / 2, 'Thank you for exploring these memories.\nEvery late night, every shared moment,\nevery "TODO: understand this"...\nit all mattered.', {
+            fontSize: '15px', fill: '#f0c060', fontFamily: 'Georgia, serif',
+            align: 'center', lineSpacing: 8
+        }).setOrigin(0.5).setDepth(32).setAlpha(0)
 
-        // Play Again button
-        let btn = this.add.rectangle(W / 2, H / 2 + 80, 180, 44, 0xd4a853)
-            .setDepth(31).setInteractive({ useHandCursor: true })
-
-        this.add.text(W / 2, H / 2 + 80, 'Play Again', {
-            fontSize: '16px', fill: '#1a0a00', fontFamily: 'Courier New', fontStyle: 'bold'
-        }).setOrigin(0.5).setDepth(32)
-
-        btn.on('pointerover', () => btn.setFillStyle(0xf0c060))
-        btn.on('pointerout',  () => btn.setFillStyle(0xd4a853))
-        btn.on('pointerdown', () => { this.scene.restart() })
+        this.tweens.add({
+            targets: finalMessage,
+            alpha: 1,
+            duration: 800,
+            delay: 400,
+            onComplete: () => {
+                this.time.delayedCall(1500, () => {
+                    this.scene.start('MessageScene')
+                })
+            }
+        })
     }
-
-
-    // Final Build Modules
-
-    // getSavedProgress() { ... }
-    // saveProgress(key)  { ... }
-    // clearProgress()    { ... }
 }
