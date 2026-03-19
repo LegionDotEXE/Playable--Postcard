@@ -38,13 +38,13 @@ class preloader extends Phaser.Scene {
         this.load.image('obj-lamp',   'images/lamp.png')
         this.load.image('obj-notes',  'images/notes.png')
 
-        // Decorative Clutter Assets (optional - game works without them)
-        this.load.image('decor-headphones', 'images/decor-headphones.png')
-        this.load.image('decor-sticky',     'images/decor-sticky.png')
-        this.load.image('decor-pen',        'images/decor-pen.png')
-        this.load.image('decor-coaster',    'images/decor-coaster.png')
-        this.load.image('decor-phone',      'images/decor-phone.png')
-        this.load.image('decor-wrapper',    'images/decor-wrapper.png')
+        // Decorative Clutter Assets 
+        this.load.image('decor-headphones', 'images/headphones.png')
+        this.load.image('decor-sticky',     'images/sticky.png')
+        this.load.image('decor-pen',        'images/pen.png')
+        this.load.image('decor-coaster',    'images/coaster.png')
+        this.load.image('decor-phone',      'images/phone.png')
+        this.load.image('decor-wrapper',    'images/wrapper.png')
 
         // Audio Assets
         this.load.audio('ambient', 'audio/ambient.wav')
