@@ -116,7 +116,7 @@ class messagescene extends Phaser.Scene {
         this.add.text(55, H - 95, '— Your Partner in Crime,', {
             fontSize: '14px', fill: '#7a4020', fontFamily: 'Georgia, serif', fontStyle: 'italic'
         })
-        this.add.text(55, H - 70, 'Saurav  ✌️', {
+        this.add.text(55, H - 70, 'Saurav', {
             fontSize: '22px', fill: '#2c1810', fontFamily: 'Georgia, serif', fontStyle: 'bold italic'
         })
 
