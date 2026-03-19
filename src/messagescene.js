@@ -39,6 +39,7 @@ class messagescene extends Phaser.Scene {
         }
 
         // Postage Stamp
+        
         // Test to see if it breaks the other interactions
         let stamp = this.add.graphics()
         stamp.fillStyle(0xc0392b, 1)
@@ -64,18 +65,18 @@ class messagescene extends Phaser.Scene {
         postmark.lineStyle(2, 0x886644, 0.6)
         postmark.strokeCircle(W - 155, 75, 28)
         postmark.lineBetween(W - 183, 75, W - 127, 75)
-        this.add.text(W - 155, 75, 'UCSC\n2024', {
+        this.add.text(W - 155, 75, 'UCSC\n2026', {
             fontSize: '9px', fill: '#886644', fontFamily: 'Courier New', align: 'center'
         }).setOrigin(0.5)
 
         // Recipient and sender info
-        this.add.text(W / 2 + 30, 85, 'TO:', {
+        this.add.text(W / 2 + 30, 80, 'TO:', {
             fontSize: '13px', fill: '#5a3a20', fontFamily: 'Courier New', fontStyle: 'bold'
         })
-        this.add.text(W / 2 + 30, 110, 'Samir Ghimire', {
+        this.add.text(W / 2 + 30, 100, 'Samir Ghimire', {
             fontSize: '18px', fill: '#2c1810', fontFamily: 'Georgia, serif', fontStyle: 'italic'
         })
-        this.add.text(W / 2 + 30, 140, 'The best study buddy\n(who owes me $50)', {
+        this.add.text(W / 2 + 30, 130, 'The best study buddy\n(who owes me $50)', {
             fontSize: '13px', fill: '#7a5030', fontFamily: 'Georgia, serif',
             fontStyle: 'italic', lineSpacing: 4
         })
@@ -83,7 +84,7 @@ class messagescene extends Phaser.Scene {
         this.add.text(W / 2 + 30, H - 120, 'FROM:', {
             fontSize: '11px', fill: '#5a3a20', fontFamily: 'Courier New'
         })
-        this.add.text(W / 2 + 30, H - 100, 'Saurav — Room 314', {
+        this.add.text(W / 2 + 30, H - 100, 'Saurav Shah', {
             fontSize: '14px', fill: '#2c1810', fontFamily: 'Georgia, serif', fontStyle: 'italic'
         })
 
