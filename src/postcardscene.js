@@ -9,10 +9,11 @@ class postcardscene extends Phaser.Scene {
 
     // Game state variables initialization
     init() {
-        this.TOTAL_MEMORIES = 5       // how many clickable objects exist
-        this.memoriesFound   = 0      // counter for found memories
-        this.popupOpen       = false  // blocks double-clicks while popup shows
-        this.lampClicked     = false  // tracks lamp click state
+        this.TOTAL_MEMORIES  = 5       // how many clickable objects exist
+        this.memoriesFound   = 0       // counter for found memories
+        this.popupOpen       = false   // blocks double-clicks while popup shows
+        this.lampClicked     = false   // tracks lamp click state
+        this.clutterTouched  = {}      // tracks which clutter items the player has clicked
     }
 
     // Build the scene
@@ -36,50 +37,59 @@ class postcardscene extends Phaser.Scene {
         //  Lamp glow effect 
         this.createLampGlow(W, H)
 
-        //  Decorative desk clutter drawn first so interactive objects always sit on top
-        this.addDeskClutter(W, H)   
+        this.addDeskClutter(W, H)
 
         //  Interactive objects definition - organized positions on table
         this.objectDefs = [
             {
-                key:    'mug',
-                x:      200,
-                y:      400,
-                scale:  0.14,  // Larger - mugs feel substantial
-                label:  'Coffee Mug',
-                memory: '"Remember pulling that all-nighter\nbefore the physics final?\nYou drank three of these.\nI drank four. I win."'
+                key:      'mug',
+                x:        200,
+                y:        400,
+                scale:    0.14,  // Larger - mugs feel substantial
+                label:    'Coffee Mug',
+                requires: ['coaster'],  
+                notYet:   "Samir would be horrified.\nUse the coaster first.",
+                memory:   '"Remember pulling that all-nighter\nbefore the physics final?\nYou drank three of these.\nI drank four. I win."'
             },
             {
-                key:    'laptop',
-                x:      400,
-                y:      300,
-                scale:  0.18,  
-                label:  'Laptop',
-                memory: '"You always had 47 tabs open.\n\'I need all of them\', you said.\nYou needed none of them.\nBut somehow the project shipped."'
+                key:      'laptop',
+                x:        400,
+                y:        300,
+                scale:    0.18,  
+                label:    'Laptop',
+                requires: ['headphones'],  // must check the headphones first
+                notYet:   "You can\'t just open the laptop\nwithout your study playlist going.\nCheck the vibe first.",
+                memory:   '"You always had 47 tabs open.\n\'I need all of them\', you said.\nYou needed none of them.\nBut somehow the project shipped."'
             },
             {
-                key:    'books',
-                x:      600,
-                y:      380,
-                scale:  0.13, 
-                label:  'Stack of Books',
-                memory: '"You borrowed my Data Structures\nbook and highlighted everything.\nEVERYTHING.\nIt is basically a coloring book now."'
+                key:      'books',
+                x:        600,
+                y:        380,
+                scale:    0.13, 
+                label:    'Stack of Books',
+                requires: ['phone'],  // must check the phone first
+                notYet:   "You were reading those texts\ninstead of the chapter.\nAdmit it. Check the phone.",
+                memory:   '"You borrowed my Data Structures\nbook and highlighted everything.\nEVERYTHING.\nIt is basically a coloring book now."'
             },
             {
-                key:    'lamp',
-                x:      650,
-                y:      200,
-                scale:  0.10,  
-                label:  'Desk Lamp',
-                memory: '"The lamp was always on your side.\nMy side stayed dark.\nSomehow that felt like a metaphor\nfor our friendship."'
+                key:      'lamp',
+                x:        650,
+                y:        200,
+                scale:    0.10,  
+                label:    'Desk Lamp',
+                requires: [],  // lamp has no gate — always clickable
+                notYet:   '',
+                memory:   '"The lamp was always on your side.\nMy side stayed dark.\nSomehow that felt like a metaphor\nfor our friendship."'
             },
             {
-                key:    'notes',
-                x:      150,
-                y:      220,
-                scale:  0.09,  
-                label:  'Crumpled Notes',
-                memory: '"You wrote \'TODO: understand this\'\non literally every page.\nSame, buddy. Same.\n(You still owe me $50, btw.)"'
+                key:      'notes',
+                x:        150,
+                y:        220,
+                scale:    0.09,  
+                label:    'Crumpled Notes',
+                requires: ['pen'],  // must find the pen first
+                notYet:   "You haven\'t even found the pen yet.\nHow were these written?",
+                memory:   '"You wrote \'TODO: understand this\'\non literally every page.\nSame, buddy. Same.\n(You still owe me $50, btw.)"'
             }
         ]
 
@@ -167,7 +177,7 @@ class postcardscene extends Phaser.Scene {
         // Coaster under mug
         let coaster = this.add.image(200, 415, 'decor-coaster')
             .setScale(0.11)
-            .setDepth(0)
+            .setDepth(1)
             .setAlpha(0.7)
 
         // Phone with faint screen glow
@@ -182,6 +192,49 @@ class postcardscene extends Phaser.Scene {
             .setDepth(1)
             .setRotation(0.25)
             .setAlpha(0.75)
+
+        // Wire pointerdown on each named clutter item to set its touched flag
+        let clutterMap = {
+            'headphones': headphones,
+            'pen':        pen,
+            'coaster':    coaster,
+            'phone':      phone
+        }
+
+        Object.entries(clutterMap).forEach(([key, item]) => {
+            item.setInteractive({ useHandCursor: true })
+            item.setDepth(2) 
+
+            // Make clutter draggable
+            this.input.setDraggable(item)
+
+            item.on('dragstart', () => {
+                item.setDepth(5)    // float above everything while held
+            })
+
+            item.on('drag', (pointer, dragX, dragY) => {
+                item.setPosition(dragX, dragY)
+            })
+
+            item.on('dragend', () => {
+                item.setDepth(2)    // settle back
+            })
+
+            item.on('pointerdown', () => {
+                if (!this.clutterTouched[key]) {
+                    this.clutterTouched[key] = true
+                    // Small bounce to confirm the interaction
+                    this.tweens.add({
+                        targets: item,
+                        scaleX: item.scaleX * 1.3,
+                        scaleY: item.scaleY * 1.3,
+                        duration: 100,
+                        yoyo: true,
+                        ease: 'Back.easeOut'
+                    })
+                }
+            })
+        })
 
         // Store clutter for potential future interactions
         this.clutter = [headphones, sticky1, sticky2, pen, coaster, phone, wrapper]
@@ -203,7 +256,7 @@ class postcardscene extends Phaser.Scene {
         if (alreadyFound) sprite.setAlpha(0.45)
 
         sprite.setInteractive({ useHandCursor: true })
-        sprite.setDepth(3)  // FIX: raised from 2 → 3 so sprites always sit above depth-1 clutter
+        sprite.setDepth(3)
 
         let label = this.add.text(def.x, def.y - 50, def.label, {
             fontSize: '13px',
@@ -211,7 +264,7 @@ class postcardscene extends Phaser.Scene {
             fontFamily: 'Courier New',
             backgroundColor: '#33220088',
             padding: { x: 6, y: 3 }
-        }).setOrigin(0.5).setAlpha(0).setDepth(4)  // FIX: raised label depth to match
+        }).setOrigin(0.5).setAlpha(0).setDepth(4)
 
         // Idle pulse — subtle alpha breathe to hint the object is clickable
         if (!alreadyFound) {
@@ -223,6 +276,27 @@ class postcardscene extends Phaser.Scene {
                 yoyo: true,
                 repeat: -1,
                 delay: Phaser.Math.Between(0, 800)  // stagger so objects don't pulse in sync
+            })
+        }
+
+        // Make draggable — all memories except lamp can be moved around the desk
+        if (def.key !== 'lamp') {
+            this.input.setDraggable(sprite)
+
+            sprite.on('dragstart', () => {
+                sprite.setDepth(6)              // float above everything while held
+                if (sprite.idleTween) sprite.idleTween.pause()
+                label.setAlpha(0)               // hide label while dragging
+            })
+
+            sprite.on('drag', (pointer, dragX, dragY) => {
+                sprite.setPosition(dragX, dragY)
+                label.setPosition(dragX, dragY - 50)    // label follows the sprite
+            })
+
+            sprite.on('dragend', () => {
+                sprite.setDepth(3)
+                if (sprite.idleTween && !sprite.alreadyFound) sprite.idleTween.resume()
             })
         }
 
@@ -322,15 +396,73 @@ class postcardscene extends Phaser.Scene {
         })
     }
 
+    //  Not-yet popup — shown when player clicks a memory before touching required clutter
+    showNotYetPopup(def) {
+        let W = this.scale.width
+        let H = this.scale.height
+
+        // Dim overlay
+        let overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.45).setDepth(10)
+
+        // Popup card — slightly smaller and warmer tint than the memory popup
+        let popup = this.add.graphics().setDepth(11)
+        popup.fillStyle(0xfdf0d8, 1)
+        popup.fillRoundedRect(W / 2 - 190, H / 2 - 90, 380, 170, 12)
+        popup.lineStyle(3, 0xc0392b, 1)
+        popup.strokeRoundedRect(W / 2 - 190, H / 2 - 90, 380, 170, 12)
+
+        // "Not yet" icon
+        let iconTxt = this.add.text(W / 2, H / 2 - 65, '✋', {
+            fontSize: '28px'
+        }).setOrigin(0.5).setDepth(13)
+
+        // Themed message from the objectDef
+        let msgTxt = this.add.text(W / 2, H / 2 - 20, def.notYet, {
+            fontSize: '15px',
+            fill: '#2c1810',
+            fontFamily: 'Georgia, serif',
+            fontStyle: 'italic',
+            align: 'center',
+            lineSpacing: 8
+        }).setOrigin(0.5).setDepth(13)
+
+        let closeTxt = this.add.text(W / 2, H / 2 + 55, '[ click to dismiss ]', {
+            fontSize: '12px', fill: '#a08060', fontFamily: 'Courier New'
+        }).setOrigin(0.5).setDepth(13)
+
+        // Pulse the close hint
+        this.tweens.add({
+            targets: closeTxt,
+            alpha: 0.3,
+            duration: 600,
+            yoyo: true,
+            repeat: -1
+        })
+
+        let popupElements = [overlay, popup, iconTxt, msgTxt, closeTxt]
+
+        // Dismiss on next click — reset popupOpen so game resumes normally
+        this.input.once('pointerdown', () => {
+            popupElements.forEach(el => el.destroy())
+            this.popupOpen = false
+        })
+    }
+
     //  overlay + memory card on click
     showMemoryPopup(def, sprite, label) {
         this.popupOpen = true
 
-        // FIX: removed this.sound.get() guard — .get() returns null before first play, blocking the sound entirely
         try { 
             this.sound.play('click', { volume: 0.5 })
         } catch(e) { 
             console.warn('Click sound playback failed:', e.message)
+        }
+
+        // Clutter gating — check if all required clutter items have been touched
+        let unmet = (def.requires || []).filter(key => !this.clutterTouched[key])
+        if (unmet.length > 0) {
+            this.showNotYetPopup(def)
+            return
         }
 
         let W = this.scale.width
@@ -390,7 +522,7 @@ class postcardscene extends Phaser.Scene {
             if (sprite.idleTween) sprite.idleTween.stop()
             sprite.setAlpha(0.45)
 
-            // Sparkle burst on discovery — small stars fly out from the object
+            // simple text objects that shoot out and fade
             for (let i = 0; i < 6; i++) {
                 let angle = (i / 6) * Math.PI * 2
                 let star = this.add.text(sprite.x, sprite.y, '✦', {
@@ -433,7 +565,7 @@ class postcardscene extends Phaser.Scene {
             duration: 600
         })
 
-        // Celebration text with scale-in
+        // // Celebration text with scale-in
         // this.add.text(W / 2, H / 2 - 60, 'All Memories Found!', {
         //     fontSize: '28px', fill: '#ffd700', fontFamily: 'Georgia, serif',
         //     fontStyle: 'bold', stroke: '#3a2000', strokeThickness: 4
