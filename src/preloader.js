@@ -45,6 +45,8 @@ class preloader extends Phaser.Scene {
         this.load.image('decor-coaster',    'images/coaster.png')
         this.load.image('decor-phone',      'images/phone.png')
         this.load.image('decor-wrapper',    'images/wrapper.png')
+        //this.load.image('decor-paper',      'images/paper.jpg')
+
 
         // Audio Assets
         this.load.audio('ambient', 'audio/ambient.wav')
