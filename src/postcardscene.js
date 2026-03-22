@@ -36,6 +36,9 @@ class postcardscene extends Phaser.Scene {
         //  Lamp glow effect 
         this.createLampGlow(W, H)
 
+        //  Decorative desk clutter drawn first so interactive objects always sit on top
+        this.addDeskClutter(W, H)   
+
         //  Interactive objects definition - organized positions on table
         this.objectDefs = [
             {
@@ -85,9 +88,6 @@ class postcardscene extends Phaser.Scene {
             this.interactiveObjects.push(this.createInteractiveObject(def, false))
         })
 
-        //  Decorative desk clutter 
-        this.addDeskClutter(W, H)
-
         //  UI bar at bottom with counter and instructions
         this.drawUI(W, H)
         this.updateCounter()
@@ -107,6 +107,34 @@ class postcardscene extends Phaser.Scene {
             yoyo: true,
             repeat: -1
         })
+    }
+
+    //  Steam rising from the coffee mug — 3 wisp lines that float up and reset
+    createSteamEffect(mugX, mugY) {
+        for (let i = 0; i < 3; i++) {
+            let offsetX = (i - 1) * 8          // spread wisps: -8, 0, +8
+            let startY  = mugY - 30             // just above the mug rim
+
+            let wisp = this.add.graphics()
+            wisp.lineStyle(2, 0xddddcc, 0.6)
+            wisp.lineBetween(0, 0, 0, -14)
+            wisp.setPosition(mugX + offsetX, startY)
+            wisp.setDepth(4)                    // above the mug sprite (depth 3)
+
+            // Float upward, fade out, then reset to start position
+            this.tweens.add({
+                targets: wisp,
+                y: startY - 22,
+                alpha: 0,
+                duration: 1200 + i * 300,
+                repeat: -1,
+                delay: i * 400,
+                onRepeat: () => {
+                    wisp.y = startY
+                    wisp.setAlpha(0.6)
+                }
+            })
+        }
     }
 
     //  Add decorative clutter for lived-in desk atmosphere
@@ -175,7 +203,7 @@ class postcardscene extends Phaser.Scene {
         if (alreadyFound) sprite.setAlpha(0.45)
 
         sprite.setInteractive({ useHandCursor: true })
-        sprite.setDepth(2) 
+        sprite.setDepth(3)  // FIX: raised from 2 → 3 so sprites always sit above depth-1 clutter
 
         let label = this.add.text(def.x, def.y - 50, def.label, {
             fontSize: '13px',
@@ -183,7 +211,20 @@ class postcardscene extends Phaser.Scene {
             fontFamily: 'Courier New',
             backgroundColor: '#33220088',
             padding: { x: 6, y: 3 }
-        }).setOrigin(0.5).setAlpha(0).setDepth(3)
+        }).setOrigin(0.5).setAlpha(0).setDepth(4)  // FIX: raised label depth to match
+
+        // Idle pulse — subtle alpha breathe to hint the object is clickable
+        if (!alreadyFound) {
+            sprite.idleTween = this.tweens.add({
+                targets: sprite,
+                alpha: 0.75,
+                duration: 1800,
+                ease: 'Sine.easeInOut',
+                yoyo: true,
+                repeat: -1,
+                delay: Phaser.Math.Between(0, 800)  // stagger so objects don't pulse in sync
+            })
+        }
 
         // hover effects
         sprite.on('pointerover', () => {
@@ -242,6 +283,11 @@ class postcardscene extends Phaser.Scene {
         sprite.alreadyFound = alreadyFound
         sprite.defScale     = def.scale             // For reference only! 
 
+        // Steam rising from the mug
+        if (def.key === 'mug' && !alreadyFound) {
+            this.createSteamEffect(def.x, def.y)
+        }
+
         return sprite
     }
 
@@ -280,12 +326,9 @@ class postcardscene extends Phaser.Scene {
     showMemoryPopup(def, sprite, label) {
         this.popupOpen = true
 
+        // FIX: removed this.sound.get() guard — .get() returns null before first play, blocking the sound entirely
         try { 
-            if (this.sound.get('click')) {
-                this.sound.play('click', { volume: 0.5 })
-            } else {
-                console.warn('Click sound not loaded')
-            }
+            this.sound.play('click', { volume: 0.5 })
         } catch(e) { 
             console.warn('Click sound playback failed:', e.message)
         }
@@ -342,7 +385,27 @@ class postcardscene extends Phaser.Scene {
         if (!sprite.alreadyFound) {
             sprite.alreadyFound = true
             this.memoriesFound++
+
+            // Stop idle pulse and lock alpha so the fade-out looks clean
+            if (sprite.idleTween) sprite.idleTween.stop()
             sprite.setAlpha(0.45)
+
+            // Sparkle burst on discovery — small stars fly out from the object
+            for (let i = 0; i < 6; i++) {
+                let angle = (i / 6) * Math.PI * 2
+                let star = this.add.text(sprite.x, sprite.y, '✦', {
+                    fontSize: '14px', fill: '#ffd700', fontFamily: 'Arial'
+                }).setOrigin(0.5).setDepth(5)
+                this.tweens.add({
+                    targets: star,
+                    x: sprite.x + Math.cos(angle) * 50,
+                    y: sprite.y + Math.sin(angle) * 50,
+                    alpha: 0,
+                    duration: 500,
+                    ease: 'Power2',
+                    onComplete: () => star.destroy()
+                })
+            }
 
             this.add.text(sprite.x + 20, sprite.y - 30, '✓', {
                 fontSize: '20px', fill: '#88ffaa', fontFamily: 'Arial'
@@ -371,10 +434,10 @@ class postcardscene extends Phaser.Scene {
         })
 
         // Celebration text with scale-in
-        this.add.text(W / 2, H / 2 - 60, 'All Memories Found!', {
-            fontSize: '28px', fill: '#ffd700', fontFamily: 'Georgia, serif',
-            fontStyle: 'bold', stroke: '#3a2000', strokeThickness: 4
-        }).setOrigin(0.5).setDepth(20).setScale(0.8)
+        // this.add.text(W / 2, H / 2 - 60, 'All Memories Found!', {
+        //     fontSize: '28px', fill: '#ffd700', fontFamily: 'Georgia, serif',
+        //     fontStyle: 'bold', stroke: '#3a2000', strokeThickness: 4
+        // }).setOrigin(0.5).setDepth(20).setScale(0.8)
 
         // Animate celebration text
         let celebrateText = this.add.text(W / 2, H / 2 - 60, 'All Memories Found!', {
