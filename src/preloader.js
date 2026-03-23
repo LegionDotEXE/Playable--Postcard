@@ -18,7 +18,7 @@ class preloader extends Phaser.Scene {
         let bar = this.add.rectangle(width / 2 - 198, height / 2, 4, 20, 0xffd700)
         bar.setOrigin(0, 0.5)
 
-        // Primary Text: Courier New
+        //  Loading text
         this.add.text(width / 2, height / 2 - 30, 'Loading...', {
             fontSize: '18px',
             fill: '#ffffff',
@@ -38,13 +38,13 @@ class preloader extends Phaser.Scene {
         this.load.image('obj-lamp',   'images/lamp.png')
         this.load.image('obj-notes',  'images/notes.png')
 
-        // Decorative Clutter Assets 
+        // Clutter Assets 
         this.load.image('decor-headphones', 'images/headphones.png')
         this.load.image('decor-sticky',     'images/sticky.png')
         this.load.image('decor-pen',        'images/pen.png')
-        this.load.image('decor-coaster',    'images/coaster.png')
+        this.load.image('decor-spinner',    'images/spinner.png')
         this.load.image('decor-phone',      'images/phone.png')
-        this.load.image('decor-wrapper',    'images/wrapper.png')
+        this.load.image('decor-calculator',    'images/calculator.png')
         //this.load.image('decor-paper',      'images/paper.jpg')
 
 
