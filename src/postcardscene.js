@@ -14,6 +14,10 @@ class postcardscene extends Phaser.Scene {
         this.popupOpen       = false   // blocks double-clicks while popup shows
         this.lampClicked     = false   // tracks lamp click state
         this.clutterTouched  = {}      // tracks which clutter items the player has clicked
+        this.dragTarget      = null    // currently dragged sprite (manual drag system)
+        this.dragOffsetX     = 0       // pointer offset so sprite doesn't jump on grab
+        this.dragOffsetY     = 0
+        this.toastActive     = false   // debounce so only one clutter toast shows at a time
     }
 
     // Build the scene
@@ -27,7 +31,7 @@ class postcardscene extends Phaser.Scene {
         try {
             this.ambientSound = this.sound.add('ambient', { loop: true, volume: 0.25 })
             this.ambientSound.play()
-        } catch (e) {                       // Just in case the audio files are missing or fail to load
+        } catch (e) {                       // Not to break the game if audio fails to load
             console.warn('Ambient audio not available')
         }
 
@@ -37,27 +41,28 @@ class postcardscene extends Phaser.Scene {
         //  Lamp glow effect 
         this.createLampGlow(W, H)
 
+        //  Decorative desk clutter drawn first so interactive objects always sit on top
         this.addDeskClutter(W, H)
 
-        //  Interactive objects definition - organized positions on table
+        //  Interactive objects with hover and click effects, core elements
         this.objectDefs = [
             {
                 key:      'mug',
                 x:        200,
                 y:        400,
-                scale:    0.14,  // Larger - mugs feel substantial
+                scale:    0.14,  
                 label:    'Coffee Mug',
-                requires: ['coaster'],  
-                notYet:   "Samir would be horrified.\nUse the coaster first.",
+                requires: ['spinner'],                          // must check the spinner first
+                notYet:   "Samir would be horrified.\nUse the spinner first.",
                 memory:   '"Remember pulling that all-nighter\nbefore the physics final?\nYou drank three of these.\nI drank four. I win."'
             },
             {
                 key:      'laptop',
                 x:        400,
                 y:        300,
-                scale:    0.18,  
+                scale:    0.19,  
                 label:    'Laptop',
-                requires: ['headphones'],  // must check the headphones first
+                requires: ['headphones'],                   // must check the headphones first
                 notYet:   "You can\'t just open the laptop\nwithout your study playlist going.\nCheck the vibe first.",
                 memory:   '"You always had 47 tabs open.\n\'I need all of them\', you said.\nYou needed none of them.\nBut somehow the project shipped."'
             },
@@ -67,7 +72,7 @@ class postcardscene extends Phaser.Scene {
                 y:        380,
                 scale:    0.13, 
                 label:    'Stack of Books',
-                requires: ['phone'],  // must check the phone first
+                requires: ['phone'],                    // must check the phone first
                 notYet:   "You were reading those texts\ninstead of the chapter.\nAdmit it. Check the phone.",
                 memory:   '"You borrowed my Data Structures\nbook and highlighted everything.\nEVERYTHING.\nIt is basically a coloring book now."'
             },
@@ -75,9 +80,9 @@ class postcardscene extends Phaser.Scene {
                 key:      'lamp',
                 x:        650,
                 y:        200,
-                scale:    0.10,  
+                scale:    0.09,  
                 label:    'Desk Lamp',
-                requires: [],  // lamp has no gate — always clickable
+                requires: [],               // Considering lamp as first memory, so its always clickable
                 notYet:   '',
                 memory:   '"The lamp was always on your side.\nMy side stayed dark.\nSomehow that felt like a metaphor\nfor our friendship."'
             },
@@ -98,6 +103,34 @@ class postcardscene extends Phaser.Scene {
             this.interactiveObjects.push(this.createInteractiveObject(def, false))
         })
 
+        //  Scene-level pointer events for manual drag system
+        this.input.on('pointermove', (pointer) => {
+            if (!this.dragTarget || !pointer.isDown) return
+            this.dragTarget.x = pointer.x + this.dragOffsetX
+            this.dragTarget.y = pointer.y + this.dragOffsetY
+
+            // If dragging the mug, move its label and steam wisps too
+            if (this.dragTarget.dragLabel) {
+                this.dragTarget.dragLabel.x = this.dragTarget.x
+                this.dragTarget.dragLabel.y = this.dragTarget.y - 50
+            }
+            if (this.dragTarget.steamWisps) {
+                this.dragTarget.steamWisps.forEach(wisp => {
+                    wisp.x = this.dragTarget.x + wisp.offsetX
+                    wisp.steamStartY = this.dragTarget.y - 30
+                })
+            }
+        })
+
+        this.input.on('pointerup', () => {
+            if (!this.dragTarget) return
+            this.dragTarget.setDepth(this.dragTarget.restDepth || 3)
+            if (this.dragTarget.idleTween && !this.dragTarget.alreadyFound) {
+                this.dragTarget.idleTween.resume()
+            }
+            this.dragTarget = null
+        })
+
         //  UI bar at bottom with counter and instructions
         this.drawUI(W, H)
         this.updateCounter()
@@ -108,7 +141,7 @@ class postcardscene extends Phaser.Scene {
         // Radial gradient glow around lamp position
         this.lampGlow = this.add.circle(650, 200, 200, 0xffd700, 0.10).setDepth(0)
         
-        // Subtle flicker effect (realistic bulb behavior)
+        // Subtle flicker effect to the lamp glow
         this.tweens.add({
             targets: this.lampGlow,
             alpha: 0.05,
@@ -119,17 +152,22 @@ class postcardscene extends Phaser.Scene {
         })
     }
 
-    //  Steam rising from the coffee mug — 3 wisp lines that float up and reset
+    // Create steam particle effect for the mug memory
+    // Not required, but why not add a little extra flair to the coffee mug?
+
     createSteamEffect(mugX, mugY) {
+        let wisps = []
+
         for (let i = 0; i < 3; i++) {
-            let offsetX = (i - 1) * 8          // spread wisps: -8, 0, +8
+            let offsetX = (i - 1) * 8          
             let startY  = mugY - 30             // just above the mug rim
 
             let wisp = this.add.graphics()
             wisp.lineStyle(2, 0xddddcc, 0.6)
             wisp.lineBetween(0, 0, 0, -14)
             wisp.setPosition(mugX + offsetX, startY)
-            wisp.setDepth(4)                    // above the mug sprite (depth 3)
+            wisp.setDepth(4)                    
+            wisp.offsetX = offsetX              // store relative offset for drag updates
 
             // Float upward, fade out, then reset to start position
             this.tweens.add({
@@ -140,19 +178,24 @@ class postcardscene extends Phaser.Scene {
                 repeat: -1,
                 delay: i * 400,
                 onRepeat: () => {
-                    wisp.y = startY
+                    wisp.y = wisp.steamStartY   // use stored start so drag moves are respected
                     wisp.setAlpha(0.6)
                 }
             })
+
+            wisp.steamStartY = startY           // initial start Y, updated on drag
+            wisps.push(wisp)
         }
+
+        return wisps
     }
 
     //  Add decorative clutter for lived-in desk atmosphere
     addDeskClutter(W, H) {
         // Headphones near laptop 
         let headphones = this.add.image(420, 320, 'decor-headphones')
-            .setScale(0.10)
-            .setDepth(1)
+            .setScale(0.15)
+            .setDepth(2)
             .setAlpha(0.85)
 
         // Sticky notes scattered
@@ -168,59 +211,63 @@ class postcardscene extends Phaser.Scene {
             .setRotation(0.1)
             .setAlpha(0.75)
 
-        // Pen/pencil near notes
+        // Pen,pencil near notes 
         let pen = this.add.image(170, 240, 'decor-pen')
-            .setScale(0.09)
-            .setDepth(1)
+            .setScale(0.15)
+            .setDepth(2)
             .setRotation(-0.3)
 
-        // Coaster under mug
-        let coaster = this.add.image(200, 415, 'decor-coaster')
-            .setScale(0.11)
-            .setDepth(1)
+        // Fidget spinner 
+        let spinner = this.add.image(200, 415, 'decor-spinner')
+            .setScale(0.15)
+            .setDepth(2)
             .setAlpha(0.7)
 
-        // Phone with faint screen glow
+        // Phone 
         let phone = this.add.image(580, 350, 'decor-phone')
-            .setScale(0.08)
-            .setDepth(1)
+            .setScale(0.13)
+            .setDepth(2)
             .setRotation(0.2)
 
-        // Empty snack wrapper 
-        let wrapper = this.add.image(320, 420, 'decor-wrapper')
-            .setScale(0.07)
-            .setDepth(1)
+        // Calculator
+        let calculator = this.add.image(320, 420, 'decor-calculator')
+            .setScale(0.13)
+            .setDepth(2)
             .setRotation(0.25)
             .setAlpha(0.75)
 
-        // Wire pointerdown on each named clutter item to set its touched flag
-        let clutterMap = {
-            'headphones': headphones,
-            'pen':        pen,
-            'coaster':    coaster,
-            'phone':      phone
+        // Message definitions for clutter items
+        let clutterMessages = {
+            'headphones': "Oh, the headphones.\nSamir had these on during every 'study session'.\nStudied zero minutes. Vibed infinitely.",
+            'pen':        "A pen. Actual ink. On paper.\nSamir insisted this was 'better for retention'.\nHis retention was terrible.",
+            'spinner':    "A fidget spinner.\nNot even ironic anymore.\nStill somehow calming though. Try it.",
+            'phone':      "72 unread messages.\nAll of them memes Samir sent\nat 2am during finals week.\nEvery. Single. One.",
+            'calculator': "A calculator.\nBecause apparently mental math\nwas 'too much pressure'.\nSame, honestly."
         }
 
-        Object.entries(clutterMap).forEach(([key, item]) => {
+        // Make clutter items interactive with hover and click effects
+        let clutterMap = {
+            'headphones': { item: headphones, msgKey: 'headphones' },
+            'pen':        { item: pen,        msgKey: 'pen'        },
+            'spinner':    { item: spinner,    msgKey: 'spinner'    },
+            'phone':      { item: phone,      msgKey: 'phone'      },
+            'calculator': { item: calculator,    msgKey: 'calculator' }
+        }
+
+        
+        Object.entries(clutterMap).forEach(([key, def]) => {
+            let item = def.item
             item.setInteractive({ useHandCursor: true })
-            item.setDepth(2) 
+            item.restDepth = 2
 
-            // Make clutter draggable
-            this.input.setDraggable(item)
+            item.on('pointerdown', (pointer) => {
+                // Start manual drag
+                this.dragTarget    = item
+                this.dragOffsetX   = item.x - pointer.x
+                this.dragOffsetY   = item.y - pointer.y
+                item.setDepth(5)
 
-            item.on('dragstart', () => {
-                item.setDepth(5)    // float above everything while held
-            })
-
-            item.on('drag', (pointer, dragX, dragY) => {
-                item.setPosition(dragX, dragY)
-            })
-
-            item.on('dragend', () => {
-                item.setDepth(2)    // settle back
-            })
-
-            item.on('pointerdown', () => {
+                // Mark as touched on first interaction
                 if (!this.clutterTouched[key]) {
                     this.clutterTouched[key] = true
                     // Small bounce to confirm the interaction
@@ -234,10 +281,20 @@ class postcardscene extends Phaser.Scene {
                     })
                 }
             })
+
+            item.on('pointerup', (pointer) => {
+                // Only show toast on click, not at end of a drag
+                let moved = Phaser.Math.Distance.Between(
+                    pointer.downX, pointer.downY, pointer.x, pointer.y
+                )
+                if (moved < 10) {
+                    this.showClutterToast(clutterMessages[def.msgKey])
+                }
+            })
         })
 
         // Store clutter for potential future interactions
-        this.clutter = [headphones, sticky1, sticky2, pen, coaster, phone, wrapper]
+        this.clutter = [headphones, sticky1, sticky2, pen, spinner, phone, calculator]
     }
 
     //  Draw background
@@ -257,6 +314,7 @@ class postcardscene extends Phaser.Scene {
 
         sprite.setInteractive({ useHandCursor: true })
         sprite.setDepth(3)
+        sprite.restDepth = 3
 
         let label = this.add.text(def.x, def.y - 50, def.label, {
             fontSize: '13px',
@@ -266,7 +324,9 @@ class postcardscene extends Phaser.Scene {
             padding: { x: 6, y: 3 }
         }).setOrigin(0.5).setAlpha(0).setDepth(4)
 
-        // Idle pulse — subtle alpha breathe to hint the object is clickable
+        sprite.dragLabel = label    // store reference to label on sprite for drag updates
+
+        // Idle pulse tween for unfound memories to draw attention
         if (!alreadyFound) {
             sprite.idleTween = this.tweens.add({
                 targets: sprite,
@@ -275,28 +335,7 @@ class postcardscene extends Phaser.Scene {
                 ease: 'Sine.easeInOut',
                 yoyo: true,
                 repeat: -1,
-                delay: Phaser.Math.Between(0, 800)  // stagger so objects don't pulse in sync
-            })
-        }
-
-        // Make draggable — all memories except lamp can be moved around the desk
-        if (def.key !== 'lamp') {
-            this.input.setDraggable(sprite)
-
-            sprite.on('dragstart', () => {
-                sprite.setDepth(6)              // float above everything while held
-                if (sprite.idleTween) sprite.idleTween.pause()
-                label.setAlpha(0)               // hide label while dragging
-            })
-
-            sprite.on('drag', (pointer, dragX, dragY) => {
-                sprite.setPosition(dragX, dragY)
-                label.setPosition(dragX, dragY - 50)    // label follows the sprite
-            })
-
-            sprite.on('dragend', () => {
-                sprite.setDepth(3)
-                if (sprite.idleTween && !sprite.alreadyFound) sprite.idleTween.resume()
+                delay: Phaser.Math.Between(0, 800)  // stagger start times so they don't all pulse in unison
             })
         }
 
@@ -323,10 +362,20 @@ class postcardscene extends Phaser.Scene {
             label.setAlpha(0)
         })
 
-        // show memory popup
-        sprite.on('pointerdown', () => {
+        // pointerdown — start drag (non-lamp) and register click intent
+        sprite.on('pointerdown', (pointer) => {
             if (this.popupOpen) return
-            
+
+            // Start manual drag for all except lamp
+            if (def.key !== 'lamp') {
+                this.dragTarget  = sprite
+                this.dragOffsetX = sprite.x - pointer.x
+                this.dragOffsetY = sprite.y - pointer.y
+                sprite.setDepth(6)
+                if (sprite.idleTween) sprite.idleTween.pause()
+                label.setAlpha(0)
+            }
+
             if (def.key === 'lamp') {
                 this.lampClicked = true
                 // Intensify glow 
@@ -349,17 +398,27 @@ class postcardscene extends Phaser.Scene {
                     }
                 })
             }
-            
-            this.showMemoryPopup(def, sprite, label)
+        })
+
+        // pointerup : if not a drag, show memory popup
+        sprite.on('pointerup', (pointer) => {
+            if (this.popupOpen) return
+            // Only show popup if this wasn't a drag (moved less than 10px)
+            let moved = Phaser.Math.Distance.Between(
+                pointer.downX, pointer.downY, pointer.x, pointer.y
+            )
+            if (moved < 10) {
+                this.showMemoryPopup(def, sprite, label)
+            }
         })
 
         sprite.memoryKey    = def.key
         sprite.alreadyFound = alreadyFound
         sprite.defScale     = def.scale             // For reference only! 
 
-        // Steam rising from the mug
+        // Steam rising from the mug — wisps stored on sprite so drag can move them
         if (def.key === 'mug' && !alreadyFound) {
-            this.createSteamEffect(def.x, def.y)
+            sprite.steamWisps = this.createSteamEffect(def.x, def.y)
         }
 
         return sprite
@@ -393,6 +452,48 @@ class postcardscene extends Phaser.Scene {
             scaleY: 1.3, 
             duration: 100, 
             yoyo: true 
+        })
+    }
+
+    //  When player clicks a clutter item, show a temporary toast message with a sarcastic comment
+    showClutterToast(message) {
+        // Only one toast at a time — if one is already showing, skip
+        if (this.toastActive) return
+        this.toastActive = true
+
+        let W = this.scale.width
+
+        let toast = this.add.text(W / 2, 80, message, {
+            fontSize: '14px',
+            fill: '#fdf6e3',
+            fontFamily: 'Georgia, serif',
+            fontStyle: 'italic',
+            align: 'center',
+            lineSpacing: 6,
+            backgroundColor: '#1a0a0099',
+            padding: { x: 16, y: 10 }
+        }).setOrigin(0.5, 0).setAlpha(0).setDepth(20)
+
+        // Slide in from top, hold, then fade out
+        this.tweens.add({
+            targets: toast,
+            alpha: 1,
+            y: 90,
+            duration: 250,
+            ease: 'Back.easeOut',
+            onComplete: () => {
+                this.time.delayedCall(2200, () => {
+                    this.tweens.add({
+                        targets: toast,
+                        alpha: 0,
+                        duration: 300,
+                        onComplete: () => {
+                            toast.destroy()
+                            this.toastActive = false
+                        }
+                    })
+                })
+            }
         })
     }
 
@@ -441,29 +542,32 @@ class postcardscene extends Phaser.Scene {
 
         let popupElements = [overlay, popup, iconTxt, msgTxt, closeTxt]
 
-        // Dismiss on next click — reset popupOpen so game resumes normally
-        this.input.once('pointerdown', () => {
-            popupElements.forEach(el => el.destroy())
-            this.popupOpen = false
+        // Delayed dismiss: small delay prevents the opening click from immediately closing the popup
+        this.time.delayedCall(100, () => {
+            this.input.once('pointerdown', () => {
+                popupElements.forEach(el => el.destroy())
+                this.popupOpen = false
+            })
         })
     }
 
-    //  overlay + memory card on click
+    //  showMemoryPopup — display a memory popup when the player clicks a memory
     showMemoryPopup(def, sprite, label) {
-        this.popupOpen = true
-
         try { 
             this.sound.play('click', { volume: 0.5 })
         } catch(e) { 
             console.warn('Click sound playback failed:', e.message)
         }
 
-        // Clutter gating — check if all required clutter items have been touched
+        // Check if required clutter items have been touched before showing the memory
         let unmet = (def.requires || []).filter(key => !this.clutterTouched[key])
         if (unmet.length > 0) {
+            this.popupOpen = true   // block further clicks while not-yet popup is open
             this.showNotYetPopup(def)
             return
         }
+
+        this.popupOpen = true   // block further clicks while memory popup is open
 
         let W = this.scale.width
         let H = this.scale.height
@@ -471,45 +575,34 @@ class postcardscene extends Phaser.Scene {
         // Dim overlay
         let overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.55).setDepth(10)
 
-        // Popup card
+        // Minimal popup card — just the memory text and dismiss hint
         let popup = this.add.graphics().setDepth(11)
         popup.fillStyle(0xfdf6e3, 1)
-        popup.fillRoundedRect(W / 2 - 210, H / 2 - 120, 420, 220, 12)
-        popup.lineStyle(3, 0xd4a853, 1)
-        popup.strokeRoundedRect(W / 2 - 210, H / 2 - 120, 420, 220, 12)
+        popup.fillRoundedRect(W / 2 - 200, H / 2 - 90, 400, 180, 12)
+        popup.lineStyle(2, 0xd4a853, 1)
+        popup.strokeRoundedRect(W / 2 - 200, H / 2 - 90, 400, 180, 12)
 
-        // Memory number badge
-        let badge = this.add.graphics().setDepth(12)
-        badge.fillStyle(0xd4a853, 1)
-        badge.fillCircle(W / 2 - 175, H / 2 - 100, 20)
-
-        let badgeText = this.add.text(W / 2 - 175, H / 2 - 100, `${this.memoriesFound + 1}`, {
-            fontSize: '16px', fill: '#1a0a00', fontStyle: 'bold', fontFamily: 'Courier New'
-        }).setOrigin(0.5).setDepth(13)
-
-        // Memory title and body text
-        let titleTxt = this.add.text(W / 2 - 140, H / 2 - 105, def.label, {
-            fontSize: '15px', fill: '#7b4f2e', fontFamily: 'Georgia, serif', fontStyle: 'bold italic'
-        }).setDepth(13)
-
-        let bodyTxt = this.add.text(W / 2, H / 2 - 40, def.memory, {
+        // Memory text
+        let bodyTxt = this.add.text(W / 2, H / 2 - 20, def.memory, {
             fontSize: '15px', fill: '#2c1810', fontFamily: 'Georgia, serif',
             align: 'center', lineSpacing: 8
         }).setOrigin(0.5).setDepth(13)
 
-        let closeTxt = this.add.text(W / 2, H / 2 + 80, '[ click anywhere to continue ]', {
+        let closeTxt = this.add.text(W / 2, H / 2 + 65, '[ click anywhere to continue ]', {
             fontSize: '12px', fill: '#a08060', fontFamily: 'Courier New'
         }).setOrigin(0.5).setDepth(13)
 
-        let popupElements = [overlay, popup, badge, badgeText, titleTxt, bodyTxt, closeTxt]
+        let popupElements = [overlay, popup, bodyTxt, closeTxt]
 
-        // Dismiss on next click
-        this.input.once('pointerdown', () => {
-            this.closePopup(popupElements, def, sprite, label)
+        // Delayed dismiss : Copied from not-yet popup
+        this.time.delayedCall(100, () => {
+            this.input.once('pointerdown', () => {
+                this.closePopup(popupElements, def, sprite, label)
+            })
         })
     }
 
-    //  closePopup — destroy popup and update game state
+    //  closePopup 
     closePopup(popupElements, def, sprite, label) {
         popupElements.forEach(el => el.destroy())
         this.popupOpen = false
@@ -518,11 +611,11 @@ class postcardscene extends Phaser.Scene {
             sprite.alreadyFound = true
             this.memoriesFound++
 
-            // Stop idle pulse and lock alpha so the fade-out looks clean
+            // Dim the sprite and stop idle tween if it exists 
             if (sprite.idleTween) sprite.idleTween.stop()
             sprite.setAlpha(0.45)
 
-            // simple text objects that shoot out and fade
+            // Sparkle burst on discovery
             for (let i = 0; i < 6; i++) {
                 let angle = (i / 6) * Math.PI * 2
                 let star = this.add.text(sprite.x, sprite.y, '✦', {
@@ -565,12 +658,6 @@ class postcardscene extends Phaser.Scene {
             duration: 600
         })
 
-        // // Celebration text with scale-in
-        // this.add.text(W / 2, H / 2 - 60, 'All Memories Found!', {
-        //     fontSize: '28px', fill: '#ffd700', fontFamily: 'Georgia, serif',
-        //     fontStyle: 'bold', stroke: '#3a2000', strokeThickness: 4
-        // }).setOrigin(0.5).setDepth(20).setScale(0.8)
-
         // Animate celebration text
         let celebrateText = this.add.text(W / 2, H / 2 - 60, 'All Memories Found!', {
             fontSize: '28px', fill: '#ffd700', fontFamily: 'Georgia, serif',
@@ -590,14 +677,13 @@ class postcardscene extends Phaser.Scene {
 
         if (this.ambientSound) this.ambientSound.stop()
 
-        // Final message with progressive reveal
-        let finalMessage = this.add.text(W / 2, H / 2, 'Thank you for exploring these memories.\nEvery late night, every shared moment,\nevery "TODO: understand this"...\nit all mattered.', {
-            fontSize: '15px', fill: '#f0c060', fontFamily: 'Georgia, serif',
-            align: 'center', lineSpacing: 8
-        }).setOrigin(0.5).setDepth(32).setAlpha(0)
+        // let finalMessage = this.add.text(W / 2, H / 2, 'Thank you for exploring these memories.\nEvery late night, every shared moment,\nevery "TODO: understand this"...\nit all mattered.', {
+        //     fontSize: '15px', fill: '#f0c060', fontFamily: 'Georgia, serif',
+        //     align: 'center', lineSpacing: 8
+        // }).setOrigin(0.5).setDepth(32).setAlpha(0)
 
         this.tweens.add({
-            targets: finalMessage,
+            targets: celebrateText,
             alpha: 1,
             duration: 800,
             delay: 400,
